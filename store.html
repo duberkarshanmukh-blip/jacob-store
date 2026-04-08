@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jacob Store | Elegant Stationery</title>
+    <style>
+        :root {
+            --primary: #1e272e;
+            --accent: #ef5777;
+            --bg: #f7f1e3;
+            --card-bg: #ffffff;
+            --text: #485460;
+        }
+
+        * { box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; transition: 0.3s ease; }
+        body { margin: 0; background-color: var(--bg); color: var(--text); padding-bottom: 50px; }
+
+        /* Navigation */
+        nav {
+            background: white; padding: 15px 5%; display: flex; justify-content: space-between;
+            align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            position: sticky; top: 0; z-index: 1000;
+        }
+        .logo { font-size: 1.8rem; font-weight: 800; color: var(--primary); text-transform: uppercase; cursor: pointer; }
+        .logo span { color: var(--accent); }
+
+        .search-box { flex-grow: 0.4; display: flex; }
+        .search-box input {
+            width: 100%; padding: 12px 20px; border: 2px solid #eee;
+            border-radius: 30px; outline: none; font-size: 1rem;
+        }
+        .search-box input:focus { border-color: var(--accent); }
+
+        .nav-icons { display: flex; gap: 20px; font-size: 1.4rem; cursor: pointer; }
+        .badge { font-size: 0.8rem; background: var(--accent); color: white; padding: 2px 7px; border-radius: 50%; vertical-align: top; margin-left: -10px; }
+
+        /* Hero Header */
+        header { text-align: center; padding: 60px 20px; background: white; margin-bottom: 40px; }
+        header h1 { font-size: 2.5rem; margin-bottom: 10px; color: var(--primary); }
+
+        /* Product Grid */
+        .container { max-width: 1200px; margin: auto; padding: 0 20px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 30px; }
+
+        .card {
+            background: var(--card-bg); border-radius: 20px; padding: 20px;
+            position: relative; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.03);
+            text-align: center; border: 1px solid transparent;
+        }
+        .card:hover { transform: translateY(-10px); border-color: var(--accent); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+
+        .img-container { height: 200px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
+        .img-container img { max-width: 100%; max-height: 100%; object-fit: contain; }
+
+        .wish-btn { position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #ddd; }
+        .wish-btn.active { color: var(--accent); }
+
+        .price { font-size: 1.3rem; font-weight: bold; color: var(--primary); margin: 10px 0; }
+        .discount { color: var(--accent); font-size: 0.9rem; font-weight: bold; }
+
+        .btn-group { display: flex; gap: 10px; margin-top: 20px; }
+        .btn { flex: 1; padding: 12px; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; }
+        .btn-cart { background: #eee; color: var(--primary); }
+        .btn-buy { background: var(--primary); color: white; }
+        .btn-buy:hover { background: var(--accent); }
+
+        /* Notification Toast */
+        #toast {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            background: var(--primary); color: white; padding: 15px 30px;
+            border-radius: 50px; display: none; z-index: 2000;
+        }
+
+        /* Empty State */
+        .no-results { text-align: center; padding: 50px; grid-column: 1 / -1; display: none; }
+    </style>
+</head>
+<body>
+
+<nav>
+    <div class="logo" onclick="resetStore()">JACOB<span>STORE</span></div>
+    <div class="search-box">
+        <input type="text" id="search" placeholder="Search for luxury stationery..." onkeyup="filterProducts()">
+    </div>
+    <div class="nav-icons">
+        <span onclick="alert('Wishlist: ' + wishlist.length + ' items')">❤️<span class="badge" id="w-count">0</span></span>
+        <span onclick="alert('Cart: ' + cart.length + ' items')">🛒<span class="badge" id="c-count">0</span></span>
+    </div>
+</nav>
+
+<header>
+    <h1>Curated Stationery for Creators</h1>
+    <p>Elegant. Functional. Timeless.</p>
+</header>
+
+<div class="container">
+    <div id="no-results" class="no-results">
+        <h2>No items match your search.</h2>
+        <button class="btn btn-buy" onclick="resetStore()">Clear Search</button>
+    </div>
+    <div class="grid" id="productGrid">
+        </div>
+</div>
+
+<div id="toast">Item added!</div>
+
+<script>
+    const products = [
+        { id: 1, name: "Premium Hauser XO", price: 399, brand: "Hauser", img: "358e55d4-40c4-4a2c-a461-383cc637aad7.jfif", tags: "pen ball stationery" },
+        { id: 2, name: "Skybags Samurai", price: 1899, brand: "Skybags", img: "aa3db13e-f153-44c3-a680-7b8846d1bead.png", tags: "bag backpack school" },
+        { id: 3, name: "Doms Superman Set", price: 249, brand: "Doms", img: "f380c758-2ac7-4470-8118-b65e26c6184d.png", tags: "notebook diary" },
+        { id: 4, name: "Smart Digital Clock", price: 549, brand: "Generic", img: "61150ec9-8e5b-4f45-a57f-8b8e58c42bde.png", tags: "clock tech" },
+        { id: 5, name: "Flair Write Kit", price: 149, brand: "Flair", img: "a651afb5-40a3-45c2-bdf9-cb5236c279cc.png", tags: "kit pens" },
+        { id: 6, name: "Transparent Board", price: 120, brand: "Generic", img: "98701bde-67aa-474f-b2b6-300650a8a238.png", tags: "exam board" },
+        { id: 7, name: "Office Clip Board", price: 99, brand: "Generic", img: "download.jfif", tags: "pad board" },
+        { id: 8, name: "Doms Exam Pad", price: 150, brand: "Doms", img: "747c2a3f-fc13-47d2-a929-00fa16b4cabc.png", tags: "pad exam" },
+        { id: 9, name: "Designer Notebook", price: 299, brand: "Generic", img: "682b8b45-e4cb-41a8-8b47-98d1ab2f84da.jfif", tags: "notebook diary" }
+    ];
+
+    let cart = [];
+    let wishlist = [];
+
+    // --- RENDER PRODUCTS ---
+    function renderProducts(data) {
+        const grid = document.getElementById('productGrid');
+        const noRes = document.getElementById('no-results');
+        
+        if (data.length === 0) {
+            grid.style.display = 'none';
+            noRes.style.display = 'block';
+            return;
+        }
+
+        grid.style.display = 'grid';
+        noRes.style.display = 'none';
+        
+        grid.innerHTML = data.map(item => `
+            <div class="card">
+                <button class="wish-btn" onclick="toggleWish(this, ${item.id})">❤</button>
+                <div class="img-container">
+                    <img src="${item.img}" alt="${item.name}">
+                </div>
+                <div class="discount">NEW COLLECTION</div>
+                <h3 style="margin: 10px 0 5px 0;">${item.name}</h3>
+                <div style="font-size: 0.8rem; color: #aaa;">${item.brand}</div>
+                <div class="price">₹${item.price}</div>
+                <div class="btn-group">
+                    <button class="btn btn-cart" onclick="addToCart(${item.id})">Add to Cart</button>
+                    <button class="btn btn-buy" onclick="buyNow('${item.name}')">Buy Now</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // --- SEARCH FUNCTION ---
+    function filterProducts() {
+        const val = document.getElementById('search').value.toLowerCase();
+        const filtered = products.filter(p => p.name.toLowerCase().includes(val) || p.tags.includes(val));
+        renderProducts(filtered);
+    }
+
+    function resetStore() {
+        document.getElementById('search').value = '';
+        renderProducts(products);
+    }
+
+    // --- CART & WISHLIST LOGIC ---
+    function addToCart(id) {
+        const item = products.find(p => p.id === id);
+        cart.push(item);
+        document.getElementById('c-count').innerText = cart.length;
+        showToast(`Added ${item.name} to cart!`);
+    }
+
+    function toggleWish(btn, id) {
+        btn.classList.toggle('active');
+        if (btn.classList.contains('active')) {
+            wishlist.push(id);
+            showToast("Saved to Wishlist!");
+        } else {
+            wishlist = wishlist.filter(i => i !== id);
+        }
+        document.getElementById('w-count').innerText = wishlist.length;
+    }
+
+    function buyNow(name) {
+        alert("Redirecting to secure payment for: " + name);
+    }
+
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        t.innerText = msg;
+        t.style.display = 'block';
+        setTimeout(() => { t.style.display = 'none'; }, 2000);
+    }
+
+    // Initial load
+    renderProducts(products);
+</script>
+
+</body>
+</html>
